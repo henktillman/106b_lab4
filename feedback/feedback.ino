@@ -26,7 +26,7 @@ const float R_DIV = 47500.0; // Measured resistance of 3.3k resistor
 
 const bool is_flex = false; // What type of controller to use
 
-const float DESIRED_ANGLE = 100.0;
+const float DESIRED_ANGLE = 90.0;
 
 const float STRAIGHT_RESISTANCE = 13316.65; // resistance when straight
 const float BEND_RESISTANCE = 36424.0; // resistance at 90 deg
@@ -40,6 +40,8 @@ void setup()
   }
   pinMode(3, OUTPUT);
 }
+
+float exp_error = 0;
 void loop()
 {
   float pump_command = 0;
@@ -60,12 +62,15 @@ void loop()
     pump_command = 30.0 * (error / DESIRED_ANGLE) + 25;
   } else {
     float pressure = analogRead(PRESSURE_PIN);
-//    pressure = (pressure - 100) * (25.0 / 4.0);
+    // We want to keep the pressure at about 110 for a fully contracted finger.
+    float error = 110 - pressure;
+    exp_error = 0.2*error + 0.8*exp_error;
+    
     Serial.println("Pressure: " + String(pressure));
-    pump_command = 50.0;
+    pump_command = 70 + 6*min(10, exp_error);
   }
   pump_command = min(pump_command, 100);
 //  Serial.println("Pump: " + String(pump_command));
   analogWrite(3, pump_command);
-  delay(1000);
+  delay(500);
 }
